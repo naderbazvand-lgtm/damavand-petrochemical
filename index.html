@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valve Pro Suite Enterprise v8.1 | سامانه جامع مهندسی خرید، متالورژی، استانداردهای ASME/API و CAD صنعتی</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            400: '#38bdf8',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            800: '#0c4a6e',
+                            900: '#0a3754',
+                            accent: '#38bdf8'
+                        }
+                    },
+                    fontFamily: {
+                        vazir: ['Vazirmatn', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <!-- External Libraries (Three.js, OrbitControls, SheetJS, Chart.js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #060b14;
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+        
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .cad-grid-bg {
+            background-image: 
+                linear-gradient(to right, rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+                linear-gradient(to right, rgba(56, 189, 248, 0.07) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.07) 1px, transparent 1px);
+            background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+        }
+
+        .glass-panel {
+            background: rgba(13, 20, 36, 0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(56, 189, 248, 0.16);
+            box-shadow: 0 10px 35px -5px rgba(0, 0, 0, 0.55);
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.35); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(56, 189, 248, 0.65); }
+
+        .tab-btn {
+            position: relative;
+            color: #94a3b8;
+        }
+        .tab-btn:hover {
+            color: #e2e8f0;
+            background: rgba(30, 41, 59, 0.5);
+        }
+        .tab-btn.active {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.09);
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #0284c7, #38bdf8);
+            box-shadow: 0 0 10px #38bdf8;
+        }
+        
+        .blueprint-grid {
+            background-color: #040a17;
+            background-image: 
+                linear-gradient(rgba(14, 165, 233, 0.14) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(14, 165, 233, 0.14) 1px, transparent 1px),
+                linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+        }
+
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            header, nav, .no-print { display: none !important; }
+            #datasheetModal { position: static !important; background: #fff !important; display: block !important; }
+            #datasheetModal > div { max-height: none !important; border: 1px solid #000 !important; box-shadow: none !important; background: #fff !important; color: #000 !important; }
+            #datasheetContent * { color: #000 !important; border-color: #333 !important; background: transparent !important; }
+        }
+    </style>
+</head>
+<body class="cad-grid-bg min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- TOP HEADER -->
+    <header class="glass-panel border-b border-slate-800/90 sticky top-0 z-40 px-4 py-2.5">
+        <div class="max-w-[1640px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3 w-full xl:w-auto justify-between xl:justify-start">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-600 via-cyan-500 to-amber-400 flex items-center justify-center shadow-lg shadow-sky-500/25 border border-sky-300/30">
+                        <i class="fa-solid fa-industry text-xl text-slate-950"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="font-black text-lg text-white tracking-wider">VALVE PRO SUITE</h1>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold">v8.2 METALLURGY & SHOP-CAD</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400">سامانه مهندسی خرید، متالورژی ASTM/API، جداول واقعی ASME B16.10/B16.34 و نقشه‌های کارگاهی سازندگان معتبر</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live FX Rates -->
+            <div class="flex flex-wrap items-center gap-2 text-xs font-mono">
+                <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/80">
+                    <i class="fa-solid fa-dollar-sign text-emerald-400"></i>
+                    <span class="text-slate-400">USD/IRT:</span>
+                    <input type="number" id="fxUsdIrt" value="68000" step="500" class="w-20 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-emerald-400 font-bold focus:outline-none text-left" onchange="recalculateAll()">
+                </div>
+                <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/80">
+                    <i class="fa-solid fa-euro-sign text-cyan-400"></i>
+                    <span class="text-slate-400">EUR/USD:</span>
+                    <input type="number" id="fxEurUsd" value="1.08" step="0.01" class="w-14 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-cyan-400 font-bold focus:outline-none text-left" onchange="recalculateAll()">
+                </div>
+                <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/80">
+                    <span class="text-slate-400">واحد پول:</span>
+                    <select id="activeCurrency" class="bg-slate-950 text-brand-accent font-bold rounded px-2 py-0.5 border border-slate-700 focus:outline-none" onchange="recalculateAll()">
+                        <option value="USD" selected>USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="IRT">IRT (تومان)</option>
+                        <option value="IRR">IRR (ریال)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Global Controls -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="openDatasheetModal()" class="px-3 py-1.5 rounded-lg bg-brand-600/30 hover:bg-brand-600/50 border border-brand-500/50 text-brand-accent text-xs font-bold flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span>برگه مشخصات فنی (MR Datasheet)</span>
+                </button>
+                <button onclick="saveProjectToJSON()" class="px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-floppy-disk text-sky-400"></i>
+                    <span>ذخیره</span>
+                </button>
+                <button onclick="document.getElementById('importJsonInput').click()" class="px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-folder-open text-amber-400"></i>
+                    <span>فراخوانی</span>
+                </button>
+                <input type="file" id="importJsonInput" class="hidden" accept=".json" onchange="loadProjectFromJSON(event)">
+                <button onclick="exportToExcelFull()" class="px-3 py-1.5 rounded-lg bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-500/50 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <span>خروجی Excel (MTO & BOM)</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="bg-slate-900/95 border-b border-slate-800 px-4 sticky top-[62px] z-30">
+        <div class="max-w-[1640px] mx-auto flex gap-1 overflow-x-auto text-xs md:text-sm font-semibold">
+            <button onclick="switchTab('calculatorTab')" id="tab-calculatorTab" class="tab-btn active px-4 py-3 flex items-center gap-2 transition whitespace-nowrap">
+                <i class="fa-solid fa-sliders text-sky-400"></i>
+                <span>۱. مهندسی متریال، استاندارد و پیکربندی</span>
+            </button>
+            <button onclick="switchTab('viewerTab')" id="tab-viewerTab" class="tab-btn px-4 py-3 flex items-center gap-2 transition whitespace-nowrap">
+                <i class="fa-solid fa-cube text-amber-400"></i>
+                <span>۲. مدل سه‌بعدی کارگاهی (3D Cutaway/Exploded) و نقشه برش 2D</span>
+            </button>
+            <button onclick="switchTab('sizingTab')" id="tab-sizingTab" class="tab-btn px-4 py-3 flex items-center gap-2 transition whitespace-nowrap">
+                <i class="fa-solid fa-water text-cyan-400"></i>
+                <span>۳. سایزینگ هیدرولیک (ISA/IEC 60534 & Cavitation)</span>
+            </button>
+            <button onclick="switchTab('mtoTab')" id="tab-mtoTab" class="tab-btn px-4 py-3 flex items-center gap-2 transition whitespace-nowrap">
+                <i class="fa-solid fa-list-check text-emerald-400"></i>
+                <span>۴. مدیریت لیست خرید (MTO / BOQ)</span>
+                <span id="navMtoBadge" class="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono">0</span>
+            </button>
+            <button onclick="switchTab('costTab')" id="tab-costTab" class="tab-btn px-4 py-3 flex items-center gap-2 transition whitespace-nowrap">
+                <i class="fa-solid fa-chart-pie text-purple-400"></i>
+                <span>۵. ساختار شکست هزینه (CBS)</span>
+            </button>
+            <button onclick="switchTab('standardsTab')" id="tab-standardsTab" class="tab-btn px-4 py-3 flex items-center gap-2 transition whitespace-nowrap">
+                <i class="fa-solid fa-book-open text-rose-400"></i>
+                <span>۶. جداول مرجع ASME B16.10 / B16.34 / API Trim و سازندگان</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow max-w-[1640px] w-full mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- ===================================================================== -->
+        <!-- TAB 1: METALLURGY, STANDARDS & CONFIGURATOR                           -->
+        <!-- ===================================================================== -->
+        <div id="calculatorTab" class="tab-content space-y-6">
+            
+            <!-- Quick Valve Category Selector -->
+            <div class="glass-panel rounded-xl p-3 border border-slate-800 space-y-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="text-xs font-bold text-slate-400 px-2"><i class="fa-solid fa-layer-group text-brand-accent ml-1"></i>خانواده شیر صنعتی (Valve Family):</span>
+                    <div class="flex flex-wrap gap-1.5" id="quickValveTypeBar"></div>
+                </div>
+                <!-- Sub-Type Pills Bar -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+                    <span class="text-xs font-bold text-amber-400 px-2"><i class="fa-solid fa-code-branch ml-1"></i>انواع و طراحی بدنه (Sub-Type / Body Style):</span>
+                    <div class="flex flex-wrap gap-1.5" id="quickSubTypeBar"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Input Form (8 cols) -->
+                <div class="lg:col-span-8 glass-panel rounded-xl p-5 border border-slate-800 space-y-5">
+                    <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-2">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-microscope text-brand-accent"></i>
+                            <span>مشخصات فنی، متالورژی و الزامات ساخت (Engineering & Metallurgy Spec)</span>
+                        </h2>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span id="applicableStdBadge" class="text-xs px-2.5 py-1 rounded bg-sky-950 text-sky-300 border border-sky-800 font-mono">API 600 / ASME B16.34</span>
+                            <span id="approvedVendorsBadge" class="text-[11px] px-2.5 py-1 rounded bg-amber-950/70 text-amber-300 border border-amber-700/60 font-mono">Vendors: Velan, Crane, Petrolvalves</span>
+                        </div>
+                    </div>
+
+                    <!-- Tag & Process Service -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+                        <div>
+                            <label class="block text-slate-400 mb-1">شماره تگ (Valve Tag No)</label>
+                            <input type="text" id="valveTag" value="HV-1042A" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-amber-300 font-mono font-bold focus:border-brand-500 focus:outline-none text-left" dir="ltr" onchange="recalculateAll()">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">شماره خط / پایپینگ کلاس</label>
+                            <input type="text" id="lineNumber" value="6&quot;-PG-102-A1A" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono focus:border-brand-500 focus:outline-none text-left" dir="ltr" onchange="recalculateAll()">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">سیال فرآیندی (Process Fluid)</label>
+                            <select id="fluidService" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white focus:border-brand-500 focus:outline-none" onchange="recalculateAll()">
+                                <option value="Sweet Gas / Hydrocarbon">گاز شیرین / هیدروکربن</option>
+                                <option value="Sour Gas (H2S)">گاز ترش (H2S - الزام NACE MR0175)</option>
+                                <option value="Crude Oil">نفت خام سنگین (Crude Oil / Sand)</option>
+                                <option value="Sea Water / Brine">آب دریا / شورابه (کلراید بالا - Pitting)</option>
+                                <option value="High Temp Steam">بخار فوق داغ (Superheated Steam)</option>
+                                <option value="Cryogenic LNG">گاز مایع کرایوژنیک (LNG / N2 -196°C)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-bold text-emerald-400">تعداد (Qty)</label>
+                            <input type="number" id="inputQty" value="1" min="1" max="5000" class="w-full bg-slate-950 border border-emerald-600/50 rounded-lg p-2 text-emerald-400 font-mono font-bold focus:border-emerald-400 focus:outline-none text-center" onchange="recalculateAll()">
+                        </div>
+                    </div>
+
+                    <!-- Core Technical Parameters (Dynamic filtered based on Valve Family) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-medium">نوع شیر (Valve Family)</label>
+                            <select id="valveType" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white focus:border-brand-500 focus:outline-none" onchange="onValveTypeChange()">
+                                <option value="Gate" selected>Gate Valve (شیر کشویی)</option>
+                                <option value="Globe">Globe Valve (شیر کروی)</option>
+                                <option value="Ball">Ball Valve (شیر توپی)</option>
+                                <option value="Butterfly">Butterfly Valve (شیر پروانه‌ای)</option>
+                                <option value="Check">Check Valve (شیر یک‌طرفه)</option>
+                                <option value="Plug">Plug Valve (شیر مخروطی)</option>
+                                <option value="Needle">Needle / Manifold (سوزنی ابزاردقیق)</option>
+                                <option value="PSV">Safety Relief Valve (اطمینان PSV)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-amber-300 mb-1 font-bold">زیرمجموعه / نوع طراحی و بدنه (Sub-Type)</label>
+                            <select id="valveSubType" class="w-full bg-slate-900 border border-amber-500/60 rounded-lg p-2 text-amber-200 font-semibold focus:border-amber-400 focus:outline-none" onchange="onSubTypeChange()">
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-medium">سایز نامی (NPS / DN)</label>
+                            <select id="valveSize" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white focus:border-brand-500 focus:outline-none font-mono" onchange="recalculateAll()">
+                                <option value="0.5">1/2" (DN 15) - Forged</option>
+                                <option value="0.75">3/4" (DN 20) - Forged</option>
+                                <option value="1">1" (DN 25) - Forged</option>
+                                <option value="1.5">1.5" (DN 40) - Forged</option>
+                                <option value="2">2" (DN 50)</option>
+                                <option value="3">3" (DN 80)</option>
+                                <option value="4">4" (DN 100)</option>
+                                <option value="6" selected>6" (DN 150)</option>
+                                <option value="8">8" (DN 200)</option>
+                                <option value="10">10" (DN 250)</option>
+                                <option value="12">12" (DN 300)</option>
+                                <option value="14">14" (DN 350)</option>
+                                <option value="16">16" (DN 400)</option>
+                                <option value="18">18" (DN 450)</option>
+                                <option value="20">20" (DN 500)</option>
+                                <option value="24">24" (DN 600)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-medium">کلاس فشاری (ASME B16.34 Class)</label>
+                            <select id="pressureClass" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white focus:border-brand-500 focus:outline-none font-mono" onchange="recalculateAll()">
+                                <option value="150">ASME Class 150 (PN 20)</option>
+                                <option value="300" selected>ASME Class 300 (PN 50)</option>
+                                <option value="600">ASME Class 600 (PN 100)</option>
+                                <option value="800">ASME Class 800 (API 602 Forged)</option>
+                                <option value="900">ASME Class 900 (PN 150)</option>
+                                <option value="1500">ASME Class 1500 (PN 250)</option>
+                                <option value="2500">ASME Class 2500 (PN 420)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-medium">متالورژی بدنه و بونت (Body / Bonnet ASTM)</label>
+                            <select id="bodyMaterial" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white focus:border-brand-500 focus:outline-none" onchange="recalculateAll()">
+                                <option value="A216-WCB" selected>ASTM A216 Gr. WCB (Cast CS - Group 1.1)</option>
+                                <option value="A105">ASTM A105N (Forged CS - Group 1.1)</option>
+                                <option value="A352-LCC">ASTM A352 Gr. LCC (Low-Temp CS -46°C - Gr 1.1)</option>
+                                <option value="A350-LF2">ASTM A350 Gr. LF2 Cl.1 (Low-Temp Forged - Gr 1.1)</option>
+                                <option value="A217-WC6">ASTM A217 Gr. WC6 (1.25Cr-0.5Mo - Gr 1.9)</option>
+                                <option value="A217-WC9">ASTM A217 Gr. WC9 (2.25Cr-1Mo - Gr 1.10)</option>
+                                <option value="A217-C12A">ASTM A217 Gr. C12A (9Cr-1Mo-V - Gr 1.15)</option>
+                                <option value="A351-CF8M">ASTM A351 Gr. CF8M (SS 316 Cast - Gr 2.2)</option>
+                                <option value="A182-F316">ASTM A182 Gr. F316/F316L (SS 316 Forged - Gr 2.2)</option>
+                                <option value="A890-4A">ASTM A890 Gr. 4A / UNS S31803 (Duplex - Gr 2.8)</option>
+                                <option value="A890-5A">ASTM A890 Gr. 5A / UNS S32750 (Super Duplex - Gr 2.8)</option>
+                                <option value="Inconel625">ASTM B564 UNS N06625 (Inconel 625 - Gr 3.8)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="
